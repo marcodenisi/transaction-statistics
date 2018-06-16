@@ -2,13 +2,18 @@ package transaction.service.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import transaction.bean.StatisticsBean;
 import transaction.model.Transaction;
+import transaction.service.StatisticsHelper;
 import transaction.service.TransactionService;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -19,7 +24,8 @@ public class TransactionServiceImpl implements TransactionService {
     private static final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
     // constants
-    private static final int TIME_FRAME = 60000;
+    private static final int LENGTH = 61;
+    private static final int MINUTE = 60;
 
     // locks
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -27,19 +33,17 @@ public class TransactionServiceImpl implements TransactionService {
     private final Lock readLock = lock.readLock();
 
     // instance variables
-    private final Transaction[] transactions = new Transaction[TIME_FRAME];
-    private double max = Double.MIN_VALUE;
-    private double min = Double.MAX_VALUE;
-    private double avg = 0.;
-    private double sum = 0;
-    private int count = 0;
+    private final StatisticsBean[] statistics = new StatisticsBean[LENGTH];
+    private StatisticsBean overallStatistics;
+
+    @Autowired private StatisticsHelper statisticsHelper;
 
     @Override
     public boolean addTransaction(Transaction transaction) {
         logger.debug("Adding transaction: {}", transaction);
 
         long now = Instant.now().toEpochMilli();
-        if (transaction.getTimestamp() < now - TIME_FRAME || transaction.getTimestamp() > now) {
+        if (transaction.getTimestamp() < now - (MINUTE * 1000) || transaction.getTimestamp() > now) {
             logger.debug("Transaction too old or in the future, rejecting it. Timestamp: {} - now: {}",
                     transaction.getTimestamp(), now);
             return false;
@@ -47,19 +51,12 @@ public class TransactionServiceImpl implements TransactionService {
 
         try {
             writeLock.lock();
-            int position = (int) (transaction.getTimestamp() % TIME_FRAME);
-            transactions[position] = transaction;
-            count++;
-            sum += transaction.getAmount();
-            avg = sum / count;
 
-            if (max < transaction.getAmount()) {
-                max = transaction.getAmount();
-            }
-            if (min > transaction.getAmount()) {
-                min = transaction.getAmount();
-            }
+            int position = (int) ((transaction.getTimestamp() / 1000) % LENGTH);
+            StatisticsBean statisticsBean = Optional.ofNullable(statistics[position])
+                    .orElse(statisticsHelper.initStatistics());
 
+            statistics[position] = statisticsHelper.updateStatistics(statisticsBean, transaction);
         } finally {
             writeLock.unlock();
         }
@@ -71,52 +68,43 @@ public class TransactionServiceImpl implements TransactionService {
     public StatisticsBean getStatistics() {
         try {
             readLock.lock();
-            return new StatisticsBean.StatisticsBeanBuilder()
-                    .withAvg(avg)
-                    .withCount(count)
-                    .withMax(max)
-                    .withMin(min)
-                    .withSum(sum)
-                    .build();
+            return overallStatistics;
         } finally {
             readLock.unlock();
         }
     }
 
-    @Scheduled(fixedRate = 1L)
-    void popUpTransition() {
+    @Scheduled(fixedDelay = 100L)
+    void updateOverallStatistics() {
+        long now = Instant.now().toEpochMilli();
+
+        int endPosition = (int) ((now / 1000) % LENGTH);
+        int startPosition = endPosition < LENGTH - 2 ? endPosition + 2 : 0;
+
         try {
             writeLock.lock();
 
-            long now = Instant.now().toEpochMilli();
-            int position = (int) ((now - 1) % TIME_FRAME);
-            Transaction oldTransaction = transactions[position];
+            List<StatisticsBean> lastMinuteStats = new ArrayList<>();
 
-            count--;
-            sum -= oldTransaction.getAmount();
-            avg = sum / count;
-            transactions[position] = null;
+            boolean hasMore = true;
+            while (hasMore) {
+                Optional.ofNullable(statistics[startPosition]).ifPresent(lastMinuteStats::add);
 
-            double actualMin = Double.MAX_VALUE;
-            double actualMax = Double.MIN_VALUE;
-            for (int i = 0; i < TIME_FRAME; i++) {
-                if (transactions[i] == null) {
-                    continue;
+                if (startPosition == endPosition) {
+                    hasMore = false;
                 }
 
-                if (actualMax < transactions[i].getAmount()) {
-                    actualMax = transactions[i].getAmount();
-                }
-                if (actualMin > transactions[i].getAmount()) {
-                    actualMin = transactions[i].getAmount();
+                if (startPosition == LENGTH - 1) {
+                    startPosition = 0;
+                } else {
+                    startPosition++;
                 }
             }
+
+            overallStatistics = statisticsHelper.updateOverallStatistics(lastMinuteStats);
         } finally {
             writeLock.unlock();
         }
-    }
 
-    Transaction[] getTransactions() {
-        return transactions;
     }
 }

@@ -1,16 +1,23 @@
 package transaction.service.impl;
 
 import org.junit.Test;
-import transaction.bean.StatisticsBean;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import transaction.model.Transaction;
+import transaction.service.StatisticsHelper;
 
 import java.time.Instant;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TransactionServiceImplUnitTest {
 
-    TransactionServiceImpl service = new TransactionServiceImpl();
+    @InjectMocks TransactionServiceImpl service;
+    @Spy StatisticsHelper statisticsHelper = new StatisticsHelperImpl();
 
     @Test
     public void shouldNotInsert() {
@@ -40,14 +47,7 @@ public class TransactionServiceImplUnitTest {
         boolean result = service.addTransaction(transaction);
 
         // then
-        StatisticsBean statistics = service.getStatistics();
         assertTrue(result);
-        assertNotNull(statistics);
-        assertEquals(amount, statistics.getAvg(), 0.0);
-        assertEquals(amount, statistics.getSum(), 0.0);
-        assertEquals(amount, statistics.getMax(), 0.0);
-        assertEquals(amount, statistics.getMin(), 0.0);
-        assertEquals(1, statistics.getCount());
     }
 
 }
