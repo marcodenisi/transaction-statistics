@@ -8,6 +8,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import transaction.model.Transaction;
 import transaction.service.StatisticsHelper;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 import static org.junit.Assert.assertFalse;
@@ -23,7 +24,7 @@ public class TransactionServiceImplUnitTest {
     public void shouldNotInsert() {
         // given
         Transaction tooOldTransaction = new Transaction.TransactionBuilder()
-                .withAmount(10.0)
+                .withAmount(new BigDecimal("10."))
                 .withTimestamp(0L)
                 .build();
 
@@ -37,7 +38,7 @@ public class TransactionServiceImplUnitTest {
     @Test
     public void shouldInsert() {
         // given
-        double amount = 5.5;
+        BigDecimal amount = new BigDecimal("10.");
         Transaction transaction = new Transaction.TransactionBuilder()
                 .withAmount(amount)
                 .withTimestamp(Instant.now().toEpochMilli())

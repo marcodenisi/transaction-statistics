@@ -1,38 +1,41 @@
 package transaction.service.impl;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import transaction.bean.StatisticsBean;
 import transaction.model.Transaction;
 import transaction.service.StatisticsHelper;
 
-import java.util.Collections;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BinaryOperator;
 
 @Service
 public class StatisticsHelperImpl implements StatisticsHelper {
 
     private BinaryOperator<StatisticsBean> updateStatisticsOperator = (s1, s2) -> {
-        double newSum = s1.getSum() + s2.getSum();
-        int newCount = s1.getCount() + s2.getCount();
+        BigDecimal newSum = s1.getSum().add(s2.getSum());
+        long newCount = s1.getCount() + s2.getCount();
+        boolean calcAllStats = newCount != 0;
+
         return new StatisticsBean.StatisticsBeanBuilder()
                 .withSum(newSum)
                 .withCount(newCount)
-                .withAvg(newCount != 0 ? newSum / newCount : 0)
-                .withMin(newCount != 0 ? Math.min(s1.getMin(), s2.getMin()) : 0)
-                .withMax(newCount != 0 ? Math.max(s1.getMax(), s2.getMax()) : 0)
+                .withAvg(calcAllStats ? newSum.divide(BigDecimal.valueOf(newCount), RoundingMode.HALF_UP) : BigDecimal.ZERO)
+                .withMin(calcAllStats ? s1.getMin().min(s2.getMin()) : BigDecimal.ZERO)
+                .withMax(calcAllStats ? s1.getMax().max(s2.getMax()) : BigDecimal.ZERO)
                 .build();
     };
 
     @Override
     public StatisticsBean initStatistics() {
         return new StatisticsBean.StatisticsBeanBuilder()
-                .withSum(0.0)
-                .withAvg(0.0)
-                .withCount(0)
-                .withMax(Double.MIN_VALUE)
-                .withMin(Double.MAX_VALUE)
+                .withSum(BigDecimal.ZERO)
+                .withAvg(BigDecimal.ZERO)
+                .withCount(0L)
+                .withMax(BigDecimal.valueOf(Double.MIN_VALUE))
+                .withMin(BigDecimal.valueOf(Double.MAX_VALUE))
                 .build();
     }
 
@@ -42,23 +45,33 @@ public class StatisticsHelperImpl implements StatisticsHelper {
             return statistics;
         }
 
-        double newSum = statistics.getSum() + currentTransaction.getAmount();
-        int newCount = statistics.getCount() + 1;
+        BigDecimal newSum = statistics.getSum().add(currentTransaction.getAmount());
+        long newCount = statistics.getCount() + 1;
         return new StatisticsBean.StatisticsBeanBuilder()
-                .withMax(Math.max(statistics.getMax(), currentTransaction.getAmount()))
-                .withMin(Math.min(statistics.getMin(), currentTransaction.getAmount()))
+                .withMax(statistics.getMax().max(currentTransaction.getAmount()))
+                .withMin(statistics.getMin().min(currentTransaction.getAmount()))
                 .withCount(newCount)
                 .withSum(newSum)
-                .withAvg(newSum / newCount)
+                .withAvg(newSum.divide(BigDecimal.valueOf(newCount), RoundingMode.HALF_UP))
                 .build();
     }
 
     @Override
     public StatisticsBean updateOverallStatistics(List<StatisticsBean> statisticsBeanList) {
-        return Optional.ofNullable(statisticsBeanList)
-                .orElse(Collections.emptyList())
-                .stream()
-                .reduce(updateStatisticsOperator)
-                .orElse(initStatistics());
+        if (CollectionUtils.isEmpty(statisticsBeanList)) {
+            return buildDefaultOverallStatistics();
+        }
+
+        return statisticsBeanList.stream().reduce(initStatistics(), updateStatisticsOperator);
+    }
+
+    private StatisticsBean buildDefaultOverallStatistics() {
+        return new StatisticsBean.StatisticsBeanBuilder()
+                .withSum(BigDecimal.ZERO)
+                .withCount(0L)
+                .withAvg(BigDecimal.ZERO)
+                .withMin(BigDecimal.ZERO)
+                .withMax(BigDecimal.ZERO)
+                .build();
     }
 }

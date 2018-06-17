@@ -1,12 +1,14 @@
 package transaction.bean;
 
+import java.math.BigDecimal;
+
 public class StatisticsBean {
 
-    private double max;
-    private double min;
-    private double sum;
-    private double avg;
-    private int count;
+    private BigDecimal max;
+    private BigDecimal min;
+    private BigDecimal sum;
+    private BigDecimal avg;
+    private long count;
 
     public StatisticsBean() {
     }
@@ -19,54 +21,54 @@ public class StatisticsBean {
         this.count = builder.count;
     }
 
-    public double getMax() {
+    public BigDecimal getMax() {
         return max;
     }
 
-    public double getMin() {
+    public BigDecimal getMin() {
         return min;
     }
 
-    public double getSum() {
+    public BigDecimal getSum() {
         return sum;
     }
 
-    public double getAvg() {
+    public BigDecimal getAvg() {
         return avg;
     }
 
-    public int getCount() {
+    public long getCount() {
         return count;
     }
 
     public static class StatisticsBeanBuilder {
-        private double max;
-        private double min;
-        private double sum;
-        private double avg;
-        private int count;
+        private BigDecimal max;
+        private BigDecimal min;
+        private BigDecimal sum;
+        private BigDecimal avg;
+        private long count;
 
-        public StatisticsBeanBuilder withMax(double max) {
+        public StatisticsBeanBuilder withMax(BigDecimal max) {
             this.max = max;
             return this;
         }
 
-        public StatisticsBeanBuilder withMin(double min) {
+        public StatisticsBeanBuilder withMin(BigDecimal min) {
             this.min = min;
             return this;
         }
 
-        public StatisticsBeanBuilder withSum(double sum) {
+        public StatisticsBeanBuilder withSum(BigDecimal sum) {
             this.sum = sum;
             return this;
         }
 
-        public StatisticsBeanBuilder withAvg(double avg) {
+        public StatisticsBeanBuilder withAvg(BigDecimal avg) {
             this.avg = avg;
             return this;
         }
 
-        public StatisticsBeanBuilder withCount(int count) {
+        public StatisticsBeanBuilder withCount(long count) {
             this.count = count;
             return this;
         }

@@ -1,7 +1,9 @@
 package transaction.model;
 
+import java.math.BigDecimal;
+
 public class Transaction {
-    private double amount;
+    private BigDecimal amount;
     private long timestamp;
 
     public Transaction() {
@@ -12,7 +14,7 @@ public class Transaction {
         this.timestamp = builder.timestamp;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
@@ -21,10 +23,10 @@ public class Transaction {
     }
 
     public static class TransactionBuilder {
-        private double amount;
+        private BigDecimal amount;
         private long timestamp;
 
-        public TransactionBuilder withAmount(double amount) {
+        public TransactionBuilder withAmount(BigDecimal amount) {
             this.amount = amount;
             return this;
         }

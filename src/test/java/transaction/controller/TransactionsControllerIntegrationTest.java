@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import transaction.model.Transaction;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.function.Predicate;
 
@@ -42,7 +43,7 @@ public class TransactionsControllerIntegrationTest {
         // given
         Transaction t = new Transaction.TransactionBuilder()
                 .withTimestamp(Instant.now().toEpochMilli())
-                .withAmount(10.)
+                .withAmount(new BigDecimal("10."))
                 .build();
 
         // when

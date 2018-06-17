@@ -5,6 +5,7 @@ import org.junit.Test;
 import transaction.bean.StatisticsBean;
 import transaction.model.Transaction;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Predicate;
@@ -21,9 +22,9 @@ public class StatisticsHelperImplTest {
         StatisticsBean statisticsBean = service.initStatistics();
 
         // then
-        Predicate<StatisticsBean> zeroesPredicate = s -> s.getCount() == 0 &&
-                s.getSum() == 0.0 && s.getAvg() == 0.0 &&
-                s.getMax() == Double.MIN_VALUE && s.getMin() == Double.MAX_VALUE;
+        Predicate<StatisticsBean> zeroesPredicate = s -> s.getCount() == 0L &&
+                s.getSum().equals(BigDecimal.ZERO) && s.getAvg().equals(BigDecimal.ZERO) &&
+                s.getMax().equals(BigDecimal.valueOf(Double.MIN_VALUE)) && s.getMin().equals(BigDecimal.valueOf(Double.MAX_VALUE));
         assertThat(statisticsBean).isNotNull().has(new Condition<>(zeroesPredicate, null, statisticsBean));
     }
 
@@ -31,11 +32,11 @@ public class StatisticsHelperImplTest {
     public void shouldNotUpdateStatistics() {
         // given
         StatisticsBean statisticsBean = new StatisticsBean.StatisticsBeanBuilder()
-                .withSum(0.0)
-                .withAvg(0.0)
+                .withSum(BigDecimal.ZERO)
+                .withAvg(BigDecimal.ZERO)
                 .withCount(0)
-                .withMax(0.0)
-                .withMin(0.0)
+                .withMax(BigDecimal.ZERO)
+                .withMin(BigDecimal.ZERO)
                 .build();
 
         // when
@@ -49,23 +50,24 @@ public class StatisticsHelperImplTest {
     public void shouldUpdateStatistics() {
         // given
         StatisticsBean statisticsBean = new StatisticsBean.StatisticsBeanBuilder()
-                .withSum(20.)
-                .withAvg(10.0)
+                .withSum(new BigDecimal("20.0"))
+                .withAvg(new BigDecimal("10.0"))
                 .withCount(2)
-                .withMax(11.0)
-                .withMin(9.0)
+                .withMax(new BigDecimal("11.0"))
+                .withMin(new BigDecimal("9.0"))
                 .build();
 
         Transaction transaction = new Transaction.TransactionBuilder()
-                .withAmount(13L)
+                .withAmount(new BigDecimal("13.0"))
                 .build();
 
         // when
         StatisticsBean result = service.updateStatistics(statisticsBean, transaction);
 
         // then
-        Predicate<StatisticsBean> updatedCondition = s -> s.getMin() == 9. && s.getMax() == 13. &&
-                s.getAvg() == 11. && s.getSum() == 33. && s.getCount() == 3;
+        Predicate<StatisticsBean> updatedCondition = s -> s.getCount() == 3 &&
+                s.getSum().equals(new BigDecimal("33.0")) && s.getAvg().equals(new BigDecimal("11.0")) &&
+                s.getMax().equals(new BigDecimal("13.0")) && s.getMin().equals(new BigDecimal("9.0"));
         assertThat(result).isNotNull().has(new Condition<>(updatedCondition, null, result));
     }
 
@@ -75,7 +77,7 @@ public class StatisticsHelperImplTest {
         StatisticsBean statisticsBean = service.initStatistics();
 
         Transaction transaction = new Transaction.TransactionBuilder()
-                .withAmount(13L)
+                .withAmount(new BigDecimal("13.0"))
                 .build();
 
         // when
@@ -83,8 +85,11 @@ public class StatisticsHelperImplTest {
         StatisticsBean overallResult = service.updateOverallStatistics(Arrays.asList(result, service.initStatistics()));
 
         // then
-        Predicate<StatisticsBean> updatePredicate = s -> s.getMin() == 13. && s.getMax() == 13. &&
-                s.getAvg() == 13. && s.getSum() == 13. && s.getCount() == 1;
+        Predicate<StatisticsBean> updatePredicate = s -> s.getSum().equals(new BigDecimal("13.0")) &&
+                s.getAvg().equals(new BigDecimal("13.0")) &&
+                s.getMax().equals(new BigDecimal("13.0")) &&
+                s.getMin().equals(new BigDecimal("13.0")) &&
+                s.getCount() == 1;
         Condition<StatisticsBean> updateCondition = new Condition<>(updatePredicate, null, result);
         assertThat(result).isNotNull().has(updateCondition);
         assertThat(overallResult).isNotNull().has(updateCondition);
@@ -94,11 +99,11 @@ public class StatisticsHelperImplTest {
     public void shouldReturnEmptyStatistics() {
         //given
         StatisticsBean emptyStats = new StatisticsBean.StatisticsBeanBuilder()
-                .withSum(0.0)
-                .withAvg(0.0)
+                .withSum(BigDecimal.ZERO)
+                .withAvg(BigDecimal.ZERO)
                 .withCount(0)
-                .withMax(Double.MIN_VALUE)
-                .withMin(Double.MAX_VALUE)
+                .withMax(BigDecimal.ZERO)
+                .withMin(BigDecimal.ZERO)
                 .build();
 
         // when
@@ -112,11 +117,11 @@ public class StatisticsHelperImplTest {
     public void shouldReturnOverallStatisticsWithOneInput() {
         // given
         StatisticsBean s = new StatisticsBean.StatisticsBeanBuilder()
-                .withSum(20.0)
-                .withAvg(10.0)
+                .withSum(new BigDecimal("20.0"))
+                .withAvg(new BigDecimal("10.0"))
                 .withCount(2)
-                .withMax(15.0)
-                .withMin(5.0)
+                .withMax(new BigDecimal("15.0"))
+                .withMin(new BigDecimal("5.0"))
                 .build();
 
         // when
@@ -130,27 +135,31 @@ public class StatisticsHelperImplTest {
     public void shouldReturnOverallStatistics() {
         // given
         StatisticsBean s1 = new StatisticsBean.StatisticsBeanBuilder()
-                .withSum(20.0)
-                .withAvg(10.0)
+                .withSum(new BigDecimal("20.0"))
+                .withAvg(new BigDecimal("10.0"))
                 .withCount(2)
-                .withMax(15.0)
-                .withMin(5.0)
+                .withMax(new BigDecimal("15.0"))
+                .withMin(new BigDecimal("5.0"))
                 .build();
 
         StatisticsBean s2 = new StatisticsBean.StatisticsBeanBuilder()
-                .withSum(30.0)
-                .withAvg(10.0)
+                .withSum(new BigDecimal("30.0"))
+                .withAvg(new BigDecimal("10.0"))
                 .withCount(3)
-                .withMax(16.0)
-                .withMin(1.0)
+                .withMax(new BigDecimal("16.0"))
+                .withMin(new BigDecimal("1.0"))
                 .build();
 
         // when
         StatisticsBean result = service.updateOverallStatistics(Arrays.asList(s1, s2));
 
         // then
-        Predicate<StatisticsBean> updatedCondition = s -> s.getMin() == 1. && s.getMax() == 16. &&
-                s.getAvg() == 10. && s.getSum() == 50. && s.getCount() == 5;
+
+        Predicate<StatisticsBean> updatedCondition = s -> s.getSum().equals(new BigDecimal("50.0")) &&
+                s.getAvg().equals(new BigDecimal("10.0")) &&
+                s.getMax().equals(new BigDecimal("16.0")) &&
+                s.getMin().equals(new BigDecimal("1.0")) &&
+                s.getCount() == 5;
         assertThat(result).isNotNull().has(new Condition<>(updatedCondition, null, result));
     }
 

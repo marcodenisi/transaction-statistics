@@ -74,7 +74,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
-    @Scheduled(fixedDelay = 100L)
+    @Scheduled(fixedDelay = 500L)
     void updateOverallStatistics() {
         long now = Instant.now().toEpochMilli();
 
@@ -107,7 +107,7 @@ public class TransactionServiceImpl implements TransactionService {
             if (startPosition >= LENGTH - 1) {
                 startPosition = -1;
             }
-            statistics[startPosition + 1] = statisticsHelper.initStatistics();
+            statistics[startPosition + 1] = null;
 
         } finally {
             writeLock.unlock();
