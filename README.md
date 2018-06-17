@@ -1,6 +1,6 @@
 # transaction-statistics
 
-How to run:
+To run, from the root folder just type 
 
 `gradle bootRun`
 
