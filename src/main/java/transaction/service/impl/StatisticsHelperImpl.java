@@ -19,9 +19,9 @@ public class StatisticsHelperImpl implements StatisticsHelper {
         return new StatisticsBean.StatisticsBeanBuilder()
                 .withSum(newSum)
                 .withCount(newCount)
-                .withAvg(newSum / newCount)
-                .withMin(Math.min(s1.getMin(), s2.getMin()))
-                .withMax(Math.max(s1.getMax(), s2.getMax()))
+                .withAvg(newCount != 0 ? newSum / newCount : 0)
+                .withMin(newCount != 0 ? Math.min(s1.getMin(), s2.getMin()) : 0)
+                .withMax(newCount != 0 ? Math.max(s1.getMax(), s2.getMax()) : 0)
                 .build();
     };
 
@@ -31,8 +31,8 @@ public class StatisticsHelperImpl implements StatisticsHelper {
                 .withSum(0.0)
                 .withAvg(0.0)
                 .withCount(0)
-                .withMax(0.0)
-                .withMin(0.0)
+                .withMax(Double.MIN_VALUE)
+                .withMin(Double.MAX_VALUE)
                 .build();
     }
 

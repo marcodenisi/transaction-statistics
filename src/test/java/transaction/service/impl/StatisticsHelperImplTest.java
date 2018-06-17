@@ -23,7 +23,7 @@ public class StatisticsHelperImplTest {
         // then
         Predicate<StatisticsBean> zeroesPredicate = s -> s.getCount() == 0 &&
                 s.getSum() == 0.0 && s.getAvg() == 0.0 &&
-                s.getMax() == 0.0 && s.getMin() == 0.0;
+                s.getMax() == Double.MIN_VALUE && s.getMin() == Double.MAX_VALUE;
         assertThat(statisticsBean).isNotNull().has(new Condition<>(zeroesPredicate, null, statisticsBean));
     }
 
@@ -70,14 +70,35 @@ public class StatisticsHelperImplTest {
     }
 
     @Test
+    public void shouldUpdateStatisticsWithInitialStatistics() {
+        // given
+        StatisticsBean statisticsBean = service.initStatistics();
+
+        Transaction transaction = new Transaction.TransactionBuilder()
+                .withAmount(13L)
+                .build();
+
+        // when
+        StatisticsBean result = service.updateStatistics(statisticsBean, transaction);
+        StatisticsBean overallResult = service.updateOverallStatistics(Arrays.asList(result, service.initStatistics()));
+
+        // then
+        Predicate<StatisticsBean> updatePredicate = s -> s.getMin() == 13. && s.getMax() == 13. &&
+                s.getAvg() == 13. && s.getSum() == 13. && s.getCount() == 1;
+        Condition<StatisticsBean> updateCondition = new Condition<>(updatePredicate, null, result);
+        assertThat(result).isNotNull().has(updateCondition);
+        assertThat(overallResult).isNotNull().has(updateCondition);
+    }
+
+    @Test
     public void shouldReturnEmptyStatistics() {
         //given
         StatisticsBean emptyStats = new StatisticsBean.StatisticsBeanBuilder()
                 .withSum(0.0)
                 .withAvg(0.0)
                 .withCount(0)
-                .withMax(0.0)
-                .withMin(0.0)
+                .withMax(Double.MIN_VALUE)
+                .withMin(Double.MAX_VALUE)
                 .build();
 
         // when
@@ -104,6 +125,7 @@ public class StatisticsHelperImplTest {
         // then
         assertThat(result).isNotNull().isEqualToComparingFieldByField(s);
     }
+
     @Test
     public void shouldReturnOverallStatistics() {
         // given

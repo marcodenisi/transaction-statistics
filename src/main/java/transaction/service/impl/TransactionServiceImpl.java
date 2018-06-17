@@ -102,6 +102,13 @@ public class TransactionServiceImpl implements TransactionService {
             }
 
             overallStatistics = statisticsHelper.updateOverallStatistics(lastMinuteStats);
+
+            // clear old statistics
+            if (startPosition >= LENGTH - 1) {
+                startPosition = -1;
+            }
+            statistics[startPosition + 1] = statisticsHelper.initStatistics();
+
         } finally {
             writeLock.unlock();
         }

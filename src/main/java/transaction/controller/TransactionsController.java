@@ -3,6 +3,7 @@ package transaction.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +22,7 @@ public class TransactionsController {
     }
 
     @RequestMapping(value = "/transactions", method = RequestMethod.POST)
-    public ResponseEntity<Void> addTransaction(Transaction transaction) {
+    public ResponseEntity<Void> addTransaction(@RequestBody Transaction transaction) {
         return new ResponseEntity<>(transactionService.addTransaction(transaction) ?
                 HttpStatus.CREATED : HttpStatus.NO_CONTENT);
     }
